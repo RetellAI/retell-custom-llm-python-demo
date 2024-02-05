@@ -21,7 +21,7 @@ class TwilioClient:
         except Exception as err:
             print(err)
             
-    def update_voice_webhook_url(self, phone_number, agent_id):
+    def register_phone_agent(self, phone_number, agent_id):
         try:
             phone_number_objects = self.client.incoming_phone_numbers.list(limit=200)
             number_sid = ''

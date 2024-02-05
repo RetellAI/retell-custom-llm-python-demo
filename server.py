@@ -16,9 +16,9 @@ llm_client = LlmClient()
 twilio_client = TwilioClient()
 
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
-# twilio_client.update_voice_webhook_url("+12133548310", os.environ['RETELL_AGENT_ID'])
+# twilio_client.register_phone_agent("+12133548310", os.environ['RETELL_AGENT_ID'])
 # twilio_client.delete_phone_number("+12133548310")
-twilio_client.create_phone_call("+12133548310", "+13123156212", os.environ['RETELL_AGENT_ID'])
+# twilio_client.create_phone_call("+12133548310", "+13123156212", os.environ['RETELL_AGENT_ID'])
 
 @flask_app.route("/twilio-voice-webhook/<agent_id_path>", methods=["POST"])
 def listen_twilio_voice_webhook(agent_id_path):
