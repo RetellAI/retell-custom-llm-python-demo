@@ -54,7 +54,11 @@ To ues these features, follow these steps:
 
 5. (optional) Call `delete_phone_number` to release a number from your Twilio pool.
 
-6. Call `create_phone_call` to start a call with caller & callee number, and your agent Id. This call would use the agent id supplied, and ignore the agent id you set up in step 3 or 4.
+6. (optional) Call `transfer_call` to transfer this on-going call to a destination number.
+
+7. (optional) Call `end_call` to end this on-going call.
+
+8. Call `create_phone_call` to start a call with caller & callee number, and your agent Id. This call would use the agent id supplied, and ignore the agent id you set up in step 3 or 4. It automatically hang up if machine/voicemail/IVR is detected. To turn it off, remove "machineDetection, asyncAmd" params.
 
 ## Run in prod
 

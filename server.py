@@ -3,7 +3,7 @@ import json
 import os
 from dotenv import load_dotenv
 from aiohttp import web
-from flask import Flask, Response
+from flask import Flask, request, Response
 from llm import LlmClient
 from twilio_server import TwilioClient
 from retellclient.models import operations
@@ -20,41 +20,37 @@ twilio_client = TwilioClient()
 # twilio_client.delete_phone_number("+12133548310")
 # twilio_client.create_phone_call("+12133548310", "+13123156212", os.environ['RETELL_AGENT_ID'])
 
-@flask_app.route("/twilio-voice-webhook/<agent_id_path>", methods=["POST"])
-def listen_twilio_voice_webhook(agent_id_path):
+async def handle_twilio_voice_webhook(request):
     try:
-        call_response = twilio_client.retell.register_call(operations.RegisterCallRequestBody(agent_id=agent_id_path, audio_websocket_protocol="twilio", audio_encoding="mulaw", sample_rate=8000))
+        agent_id_path = request.match_info['agent_id_path']
+        
+        # Check if it is machine
+        post_data = await request.post()
+        if 'AnsweredBy' in post_data and post_data['AnsweredBy'] == "machine_start":
+            twilio_client.end_call(post_data['CallSid'])
+            return
+
+        call_response = twilio_client.retell.register_call(operations.RegisterCallRequestBody(
+            agent_id=agent_id_path, 
+            audio_websocket_protocol="twilio", 
+            audio_encoding="mulaw", 
+            sample_rate=8000
+        ))
         if call_response.call_detail:
             response = VoiceResponse()
             start = response.connect()
             start.stream(url=f"wss://api.re-tell.ai/audio-websocket/{call_response.call_detail.call_id}")
-            return Response(str(response), mimetype="text/xml")
+            return web.Response(text=str(response), content_type='text/xml')
     except Exception as err:
         print(f"Error in twilio voice webhook: {err}")
-        return Response(status=500)
-
-async def flask_handler(request):
-    # Convert aiohttp request to Flask request
-    with flask_app.test_request_context(
-        path=request.path,
-        method=request.method,
-        headers={key: value for key, value in request.headers.items()},
-        data=await request.read()
-    ):
-        # Handle the request using Flask
-        flask_response = flask_app.full_dispatch_request()
-        return web.Response(
-            body=flask_response.get_data(),
-            status=flask_response.status_code,
-            headers={key: value for key, value in flask_response.headers.items()}
-)
+        return web.Response(status=500)
         
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
     
     call_id = request.match_info['call_id']
-    print(f"Path parameter after 'llm-websocket': {call_id}")
+    print(f"Handle llm ws for: {call_id}")
 
     # send first message to signal ready of server
     response_id = 0
@@ -89,11 +85,12 @@ async def websocket_handler(request):
                 print(f'WebSocket connection closed with exception: {ws.exception()}')
     except Exception as e:
         print(f'LLM WebSocket error for {call_id}: {e}')    
+    print(f"Closing llm ws for: {call_id}")
     return ws
 
 async def init_app():
     app = web.Application()
-    app.router.add_route('*', '/twilio-voice-webhook/{agent_id_path}', flask_handler)
+    app.router.add_post('/twilio-voice-webhook/{agent_id_path}', handle_twilio_voice_webhook)
     app.router.add_get('/llm-websocket/{call_id:.*}', websocket_handler)  # Adjust the WebSocket route as needed
     return app
 

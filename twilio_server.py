@@ -8,7 +8,8 @@ class TwilioClient:
         self.retell = retellclient.RetellClient(
             api_key=os.environ['RETELL_API_KEY'],
         )
-         
+
+    # Create a new phone number and route it to use this server.
     def create_phone_number(self, area_code, agent_id):
         try:
             local_number = self.client.available_phone_numbers('US').local.list(area_code=area_code,
@@ -21,6 +22,7 @@ class TwilioClient:
         except Exception as err:
             print(err)
             
+    # Update this phone number to use provided agent id. Also updates voice URL address.
     def register_phone_agent(self, phone_number, agent_id):
         try:
             phone_number_objects = self.client.incoming_phone_numbers.list(limit=200)
@@ -37,6 +39,7 @@ class TwilioClient:
         except Exception as err:
             print(err)
     
+    # Release a phone number
     def delete_phone_number(self, phone_number):
         try:
             phone_number_objects = self.client.incoming_phone_numbers.list(limit=200)
@@ -53,9 +56,38 @@ class TwilioClient:
         except Exception as err:
             print(err)
     
+    # Use LLM function calling or some kind of parsing to determine when to let AI end the call
+    def end_call(self, sid):
+        try:
+            call = self.client.calls(sid).update(
+                twiml="<Response><Hangup></Hangup></Response>",
+            )
+            print(f"Ended call: ", vars(call))
+        except Exception as err:
+            print(err)
+    
+    # Use LLM function calling or some kind of parsing to determine when to transfer away this call
+    def transfer_call(self, sid, to_number):
+        try:
+            call = self.client.calls(sid).update(
+                twiml=f"<Response><Dial>{to_number}</Dial></Response>",
+            )
+            print(f"Transferred call: ", vars(call))
+        except Exception as err:
+            print(err)
+    
+    # Create an outbound call
     def create_phone_call(self, from_number, to_number, agent_id):
         try:
-            self.client.calls.create(url=f"{os.getenv('NGROK_IP_ADDRESS')}/twilio-voice-webhook/{agent_id}", to=to_number, from_=from_number)
+            self.client.calls.create(
+                machine_detection="Enable", # detects if the other party is IVR
+                machine_detection_timeout=8,
+                async_amd="true", # call webhook when determined whether it is machine
+                async_amd_status_callback=f"{os.getenv('NGROK_IP_ADDRESS')}/twilio-voice-webhook/{agent_id}", # Webhook url for machine detection
+                url=f"{os.getenv('NGROK_IP_ADDRESS')}/twilio-voice-webhook/{agent_id}", 
+                to=to_number, 
+                from_=from_number
+            )
             print(f"Call from: {from_number} to: {to_number}")
         except Exception as err:
             print(err)
