@@ -3,7 +3,6 @@ import json
 import os
 from dotenv import load_dotenv
 from aiohttp import web
-from flask import Flask, request, Response
 from llm import LlmClient
 from twilio_server import TwilioClient
 from retellclient.models import operations
@@ -11,7 +10,6 @@ from twilio.twiml.voice_response import VoiceResponse
 
 load_dotenv()
 
-flask_app = Flask(__name__)
 llm_client = LlmClient()
 twilio_client = TwilioClient()
 
