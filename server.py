@@ -23,6 +23,8 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+call_list = {}
+
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
 # twilio_client.register_phone_agent("+12133548310", os.environ['RETELL_AGENT_ID'])
 # twilio_client.delete_phone_number("+12133548310")
@@ -51,6 +53,8 @@ async def handle_twilio_voice_webhook(request):
             response = VoiceResponse()
             start = response.connect()
             start.stream(url=f"wss://api.re-tell.ai/audio-websocket/{call_response.call_detail.call_id}")
+            call_list[call_response.call_detail.call_id]=post_data['Called']
+            
             return web.Response(text=str(response), content_type='text/xml')
     except Exception as err:
         print(f"Error in twilio voice webhook: {err}")
@@ -62,6 +66,7 @@ async def websocket_handler(request):
     
     call_id = request.match_info['call_id']
     print(f"Handle llm ws for: {call_id}")
+    logger.debug(f"Calling to: {call_list[call_id]}")
 
     # send first message to signal ready of server
     response_id = 0
