@@ -25,6 +25,7 @@ async def handle_twilio_voice_webhook(request):
         
         # Check if it is machine
         post_data = await request.post()
+        print(f"Post Data: {post_data}")
         if 'AnsweredBy' in post_data and post_data['AnsweredBy'] == "machine_start":
             twilio_client.end_call(post_data['CallSid'])
             return
