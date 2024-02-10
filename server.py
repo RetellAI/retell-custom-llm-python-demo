@@ -67,7 +67,10 @@ async def websocket_handler(request):
     
     call_id = request.match_info['call_id']
     logger.debug(f"Handle llm ws for: {call_id}")
-    logger.debug(f"Calling to: {call_list[call_id]}")
+    
+    call_id_value = call_id.split('/')[1]
+
+    logger.debug(f"Calling to: {call_list[call_id_value]}")
 
     # send first message to signal ready of server
     response_id = 0
