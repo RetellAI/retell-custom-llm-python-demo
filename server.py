@@ -7,11 +7,21 @@ from llm import LlmClient
 from twilio_server import TwilioClient
 from retellclient.models import operations
 from twilio.twiml.voice_response import VoiceResponse
+import logging
 
 load_dotenv()
 
 llm_client = LlmClient()
 twilio_client = TwilioClient()
+
+logging.basicConfig(
+    filename='app.log',
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s %(message)s'
+
+)
+
+logger = logging.getLogger(__name__)
 
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
 # twilio_client.register_phone_agent("+12133548310", os.environ['RETELL_AGENT_ID'])
@@ -20,12 +30,12 @@ twilio_client.create_phone_call("+15123801351", "+14159646968", os.environ['RETE
 
 async def handle_twilio_voice_webhook(request):
     try:
-        print(f"Call Request: {request}")
+        logger.debug(f"Call Request: {request}")
         agent_id_path = request.match_info['agent_id_path']
         
         # Check if it is machine
         post_data = await request.post()
-        print(f"Post Data: {post_data}")
+        logger.debug(f"Post Data: {post_data}")
         if 'AnsweredBy' in post_data and post_data['AnsweredBy'] == "machine_start":
             twilio_client.end_call(post_data['CallSid'])
             return
