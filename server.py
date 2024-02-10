@@ -53,6 +53,7 @@ async def handle_twilio_voice_webhook(request):
             response = VoiceResponse()
             start = response.connect()
             start.stream(url=f"wss://api.re-tell.ai/audio-websocket/{call_response.call_detail.call_id}")
+            logger.debug(f"twilio webhook call_id: {call_response.call_detail.call_id}")
             call_list[call_response.call_detail.call_id]=post_data['Called']
             
             return web.Response(text=str(response), content_type='text/xml')
@@ -65,7 +66,7 @@ async def websocket_handler(request):
     await ws.prepare(request)
     
     call_id = request.match_info['call_id']
-    print(f"Handle llm ws for: {call_id}")
+    logger.debug(f"Handle llm ws for: {call_id}")
     logger.debug(f"Calling to: {call_list[call_id]}")
 
     # send first message to signal ready of server
