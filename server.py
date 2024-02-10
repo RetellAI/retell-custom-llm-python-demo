@@ -47,7 +47,7 @@ async def handle_twilio_voice_webhook(request):
             sample_rate=8000
         ))
         if call_response.call_detail:
-            logger.debug(f"Call Response: {call_response}")
+            logger.debug(f"Call Response: {call_response.call_detail}")
             response = VoiceResponse()
             start = response.connect()
             start.stream(url=f"wss://api.re-tell.ai/audio-websocket/{call_response.call_detail.call_id}")
