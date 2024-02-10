@@ -20,6 +20,7 @@ twilio_client.create_phone_call("+15123801351", "+14159646968", os.environ['RETE
 
 async def handle_twilio_voice_webhook(request):
     try:
+        print(request)
         agent_id_path = request.match_info['agent_id_path']
         
         # Check if it is machine
