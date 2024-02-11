@@ -8,11 +8,15 @@ from twilio_server import TwilioClient
 from retellclient.models import operations
 from twilio.twiml.voice_response import VoiceResponse
 import logging
+from db import DBClient
 
 load_dotenv()
 
 llm_client = LlmClient()
 twilio_client = TwilioClient()
+db_client = DBClient('callee.db')
+user = db_client.get_username_by_phone_number(14159646968)
+print(user)
 
 logging.basicConfig(
     filename='app.log',
@@ -28,7 +32,7 @@ call_list = {}
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
 # twilio_client.register_phone_agent("+12133548310", os.environ['RETELL_AGENT_ID'])
 # twilio_client.delete_phone_number("+12133548310")
-twilio_client.create_phone_call("+15123801351", "+14159646968", os.environ['RETELL_AGENT_ID'])
+#twilio_client.create_phone_call("+15123801351", "+14159646968", os.environ['RETELL_AGENT_ID'])
 
 async def handle_twilio_voice_webhook(request):
     try:
@@ -54,7 +58,8 @@ async def handle_twilio_voice_webhook(request):
             start = response.connect()
             start.stream(url=f"wss://api.re-tell.ai/audio-websocket/{call_response.call_detail.call_id}")
             logger.debug(f"twilio webhook call_id: {call_response.call_detail.call_id}")
-            call_list[call_response.call_detail.call_id]=post_data['Called']
+            user = db_client.get_username_by_phone_number(post_data['Called'].lstrip('+'))
+            call_list[call_response.call_detail.call_id]=user
             
             return web.Response(text=str(response), content_type='text/xml')
     except Exception as err:
