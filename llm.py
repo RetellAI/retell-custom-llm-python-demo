@@ -60,7 +60,7 @@ class LlmClient:
     def draft_response(self, request):      
         prompt = self.prepare_prompt(request)
         stream = self.client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+            model="gpt-3.5-turbo-0125",
             messages=prompt,
             stream=True,
         )
