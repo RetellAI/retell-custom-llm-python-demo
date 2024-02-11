@@ -34,6 +34,9 @@ call_list = {}
 # twilio_client.delete_phone_number("+12133548310")
 #twilio_client.create_phone_call("+15123801351", "+14159646968", os.environ['RETELL_AGENT_ID'])
 
+async def index(request):
+    return web.Response(text="Welcome home!")
+
 async def call_number(request):
     to_number = request.match_info['to_number']
     print(f"Calling {to_number}")
@@ -92,7 +95,7 @@ async def websocket_handler(request):
         nonlocal response_id
         try:
             # print out transcript
-            os.system('cls' if os.name == 'nt' else 'clear')
+            #os.system('cls' if os.name == 'nt' else 'clear')
             print(json.dumps(request, indent=4))
 
             if 'response_id' not in request:
@@ -124,9 +127,11 @@ async def init_app():
     app.router.add_post('/twilio-voice-webhook/{agent_id_path}', handle_twilio_voice_webhook)
     app.router.add_get('/llm-websocket/{call_id:.*}', websocket_handler)  # Adjust the WebSocket route as needed
     app.router.add_get('/call_number/{to_number}', call_number)  # Adjust the WebSocket route as needed
+    app.router.add_get('/', index)
+    
     return app
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     app = loop.run_until_complete(init_app())
-    web.run_app(app, port=8080)
+    web.run_app(app, port=8081)
