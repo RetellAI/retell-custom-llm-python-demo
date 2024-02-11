@@ -1,7 +1,7 @@
 from openai import OpenAI
 import os
 
-beginSentence = "Hi, this is Marissa from VA Group, A, am I speaking to Nic?"
+beginSentence = "Hi, this is Marissa from VA Group, A, am I speaking to "
 agentPrompt = """
 Task: Imagine you are a Sales Rep at VA group, making phone calls phone calls to schedule appointments. 
 If users says yes, then say I'm calling to follow up on an email we sent you regarding our services.Have you had a chance to review our offer?
@@ -17,10 +17,10 @@ class LlmClient:
             api_key=os.environ['OPENAI_API_KEY'],
         )
     
-    def draft_begin_messsage(self):
+    def draft_begin_messsage(self, user):
         return {
             "response_id": 0,
-            "content": beginSentence,
+            "content": f"{beginSentence}{user}?",
             "content_complete": True,
             "end_call": False,
         }

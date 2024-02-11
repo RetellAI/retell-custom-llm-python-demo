@@ -74,12 +74,13 @@ async def websocket_handler(request):
     logger.debug(f"Handle llm ws for: {call_id}")
     
     call_id_value = call_id.split('/')[1]
+    username=call_list[call_id_value]
 
     logger.debug(f"Calling to: {call_list[call_id_value]}")
 
     # send first message to signal ready of server
     response_id = 0
-    first_event = llm_client.draft_begin_messsage()
+    first_event = llm_client.draft_begin_messsage(username)
     await ws.send_str(json.dumps(first_event))
 
     async def process_message(request):
