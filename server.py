@@ -32,7 +32,12 @@ call_list = {}
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
 # twilio_client.register_phone_agent("+12133548310", os.environ['RETELL_AGENT_ID'])
 # twilio_client.delete_phone_number("+12133548310")
-twilio_client.create_phone_call("+15123801351", "+14159646968", os.environ['RETELL_AGENT_ID'])
+#twilio_client.create_phone_call("+15123801351", "+14159646968", os.environ['RETELL_AGENT_ID'])
+
+async def call_number(request):
+    to_number = request.match_info['to_number']
+    print(f"Calling {to_number}")
+    twilio_client.create_phone_call("+15123801351", to_number, os.environ['RETELL_AGENT_ID'])
 
 async def handle_twilio_voice_webhook(request):
     try:
@@ -118,6 +123,7 @@ async def init_app():
     app = web.Application()
     app.router.add_post('/twilio-voice-webhook/{agent_id_path}', handle_twilio_voice_webhook)
     app.router.add_get('/llm-websocket/{call_id:.*}', websocket_handler)  # Adjust the WebSocket route as needed
+    app.router.add_get('/call_number/{to_number}', call_number)  # Adjust the WebSocket route as needed
     return app
 
 if __name__ == "__main__":
