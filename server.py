@@ -32,7 +32,7 @@ call_list = {}
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
 # twilio_client.register_phone_agent("+12133548310", os.environ['RETELL_AGENT_ID'])
 # twilio_client.delete_phone_number("+12133548310")
-#twilio_client.create_phone_call("+15123801351", "+14159646968", os.environ['RETELL_AGENT_ID'])
+twilio_client.create_phone_call("+15123801351", "+14159646968", os.environ['RETELL_AGENT_ID'])
 
 async def handle_twilio_voice_webhook(request):
     try:
