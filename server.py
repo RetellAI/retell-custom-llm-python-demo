@@ -82,7 +82,7 @@ async def websocket_handler(request):
     logger.debug(f"Handle llm ws for: {call_id}")
     
     call_id_value = call_id.split('/')[1]
-    username=call_list[call_id_value]
+    username=call_list.get(call_id_value, 'John')
 
     logger.debug(f"Calling to: {call_list[call_id_value]}")
 
