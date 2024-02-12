@@ -84,7 +84,7 @@ async def websocket_handler(request):
     call_id_value = call_id.split('/')[1]
     username=call_list.get(call_id_value, 'John')
 
-    logger.debug(f"Calling to: {call_list[call_id_value]}")
+    logger.debug(f"Calling to: {username}")
 
     # send first message to signal ready of server
     response_id = 0
