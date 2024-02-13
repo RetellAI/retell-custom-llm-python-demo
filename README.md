@@ -31,8 +31,8 @@ uvicorn server:app --reload --port=8080
 You should see a fowarding address like
 `https://dc14-2601-645-c57f-8670-9986-5662-2c9a-adbd.ngrok-free.app`, and you
 are going to take the IP address, prepend it with wss, postpend with
-`llm-websocket` path and use that in the dashboard to create a new agent. Now
-the agent you created should connect with your localhost.
+`llm-websocket` path and use that in the [dashboard](https://beta.retellai.com/dashboard) to create a new `agent`. Now
+the `agent` you created should connect with your localhost.
 
 The custom LLM URL would look like
 `wss://dc14-2601-645-c57f-8670-9986-5662-2c9a-adbd.ngrok-free.app/llm-websocket`
@@ -40,7 +40,7 @@ The custom LLM URL would look like
 ### Optional: Phone Call Features via Twilio
 
 The `twilio_server.py` contains helper functions you could utilize to create phone numbers, tie agent to a number,
-make a phone call with an agent, etc. Here we assume you already created agent from last step, and have agent id ready.
+make a phone call with an agent, etc. Here we assume you already created agent from last step, and have `agent id` ready.
 
 To ues these features, follow these steps:
 
