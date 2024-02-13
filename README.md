@@ -2,8 +2,8 @@
 
 This is a sample demo repo to show how to have your own LLM plugged into Retell.
 
-This repo currently uses OpenAI endpoint, and is not as stable and fast as Azure
-OpenAI endpoint. So expect a more varying delay. Feel free to contribute to make
+This repo currently uses `OpenAI` endpoint, and is not as stable and fast as `Azure
+OpenAI` endpoint. So expect a more varying delay. Feel free to contribute to make
 this demo more realistic.
 
 ## Steps to run in localhost
@@ -16,16 +16,16 @@ pip3 install requirements.txt
 
 2. Fill out the API keys in `.env`
 
-3. Start the websocket server
-
-```bash
-python3 server.py
-```
-
-4. In another bash, use ngrok to expose this port to public network
+3. In another bash, use ngrok to expose this port to public network
 
 ```bash
 ngrok http 8080
+```
+
+4. Start the websocket server
+
+```bash
+uvicorn server:app --reload --port=8080
 ```
 
 You should see a fowarding address like
