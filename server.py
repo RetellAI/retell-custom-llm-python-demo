@@ -1,9 +1,11 @@
-import asyncio
 import json
 import os
 from dotenv import load_dotenv
-from aiohttp import web
-from llm import LlmClient
+from fastapi import FastAPI, Request, WebSocket
+from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.websockets import WebSocketState
+# from llm import LlmClient
+from llm_with_func_calling import LlmClient
 from twilio_server import TwilioClient
 from retellclient.models import operations
 from twilio.twiml.voice_response import VoiceResponse
@@ -11,6 +13,8 @@ import logging
 from db import DBClient
 
 load_dotenv()
+
+app = FastAPI()
 
 llm_client = LlmClient()
 twilio_client = TwilioClient()
@@ -42,18 +46,17 @@ async def call_number(request):
     print(f"Calling {to_number}")
     twilio_client.create_phone_call("+15123801351", to_number, os.environ['RETELL_AGENT_ID'])
 
-async def handle_twilio_voice_webhook(request):
+@app.post("/twilio-voice-webhook/{agent_id_path}")
+async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
     try:
         logger.debug(f"Call Request: {request}")
-        agent_id_path = request.match_info['agent_id_path']
-        
         # Check if it is machine
-        post_data = await request.post()
+        post_data = await request.form()
         logger.debug(f"Post Data: {post_data}")
         logger.debug(f"Called Number: {post_data['Called']}")
         if 'AnsweredBy' in post_data and post_data['AnsweredBy'] == "machine_start":
             twilio_client.end_call(post_data['CallSid'])
-            return
+            return PlainTextResponse("")
 
         call_response = twilio_client.retell.register_call(operations.RegisterCallRequestBody(
             agent_id=agent_id_path, 
@@ -69,16 +72,14 @@ async def handle_twilio_voice_webhook(request):
             user = db_client.get_username_by_phone_number(post_data['Called'].lstrip('+'))
             call_list[call_response.call_detail.call_id]=user
             
-            return web.Response(text=str(response), content_type='text/xml')
+            return PlainTextResponse(str(response), media_type='text/xml')
     except Exception as err:
         print(f"Error in twilio voice webhook: {err}")
-        return web.Response(status=500)
-        
-async def websocket_handler(request):
-    ws = web.WebSocketResponse()
-    await ws.prepare(request)
-    
-    call_id = request.match_info['call_id']
+        return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
+
+@app.websocket("/llm-websocket/{call_id}")
+async def websocket_handler(websocket: WebSocket, call_id: str):
+    await websocket.accept()
     logger.debug(f"Handle llm ws for: {call_id}")
     
     call_id_value = call_id.split('/')[1]
@@ -89,49 +90,30 @@ async def websocket_handler(request):
     # send first message to signal ready of server
     response_id = 0
     first_event = llm_client.draft_begin_messsage(username)
-    await ws.send_str(json.dumps(first_event))
+    await websocket.send_text(json.dumps(first_event))
 
-    async def process_message(request):
-        nonlocal response_id
-        try:
+    try:
+        while True:
+            message = await websocket.receive_text()
+            request = json.loads(message)
             # print out transcript
             #os.system('cls' if os.name == 'nt' else 'clear')
             print(json.dumps(request, indent=4))
 
             if 'response_id' not in request:
-                return # no response needed, process live transcript update if needed
+                continue # no response needed, process live transcript update if needed
 
             if request['response_id'] > response_id:
                 response_id = request['response_id']
             for event in llm_client.draft_response(request):
-                await ws.send_str(json.dumps(event))
+                await websocket.send_text(json.dumps(event))
                 if request['response_id'] < response_id:
-                    return # new response needed, abondon this one
-        except Exception as e:
-            print(f"Encountered error in generating response: {e}")
-            print(message)
-
-    try:
-        async for message in ws:
-            if message.type == web.WSMsgType.TEXT:
-                await process_message(json.loads(message.data))
-            elif message.type == web.WSMsgType.ERROR:
-                print(f'WebSocket connection closed with exception: {ws.exception()}')
+                    continue # new response needed, abondon this one
     except Exception as e:
-        print(f'LLM WebSocket error for {call_id}: {e}')    
-    print(f"Closing llm ws for: {call_id}")
-    return ws
-
-async def init_app():
-    app = web.Application()
-    app.router.add_post('/twilio-voice-webhook/{agent_id_path}', handle_twilio_voice_webhook)
-    app.router.add_get('/llm-websocket/{call_id:.*}', websocket_handler)  # Adjust the WebSocket route as needed
-    app.router.add_get('/call_number/{to_number}', call_number)  # Adjust the WebSocket route as needed
-    app.router.add_get('/', index)
-    
-    return app
-
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    app = loop.run_until_complete(init_app())
-    web.run_app(app, port=8080)
+        print(f'LLM WebSocket error for {call_id}: {e}')
+    finally:
+        try:
+            await websocket.close()
+        except RuntimeError as e:
+            print(f"Websocket already closed for {call_id}")
+        print(f"Closing llm ws for: {call_id}")
