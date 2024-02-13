@@ -16,7 +16,9 @@ class TwilioClient:
                                            limit=1)
             if (local_number is None or local_number[0] == None):
                 raise "No phone numbers of this area code."
-            phone_number_object = self.client.incoming_phone_numbers.create(phone_number=local_number[0].phone_number, voice_url=f"{os.getenv('NGROK_IP_ADDRESS')}/twilio-voice-webhook/{agent_id}")
+            phone_number_object = self.client.incoming_phone_numbers.create(
+                phone_number=local_number[0].phone_number, 
+                voice_url=f"{os.getenv('NGROK_IP_ADDRESS')}/twilio-voice-webhook/{agent_id}")
             print("Getting phone number:", vars(phone_number_object))
             return phone_number_object
         except Exception as err:
@@ -33,8 +35,9 @@ class TwilioClient:
             if number_sid is None:
                 print("Unable to locate this number in your Twilio account, is the number you used in BCP 47 format?")
                 return
-            phone_number_object = self.client.incoming_phone_numbers(number_sid).update(voice_url=f"{os.getenv('NGROK_IP_ADDRESS')}/twilio-voice-webhook/{agent_id}")
-            print("Getting phone number:", vars(phone_number_object))
+            phone_number_object = self.client.incoming_phone_numbers(number_sid).update(
+                voice_url=f"{os.getenv('NGROK_IP_ADDRESS')}/twilio-voice-webhook/{agent_id}")
+            print("Register phone agent:", vars(phone_number_object))
             return phone_number_object
         except Exception as err:
             print(err)
