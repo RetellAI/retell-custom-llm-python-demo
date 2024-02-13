@@ -1,5 +1,6 @@
 from openai import OpenAI
 import os
+import json
 
 beginSentence = "Hey there, I'm your personal AI therapist, how can I help you?"
 agentPrompt = "Task: As a professional therapist, your responsibilities are comprehensive and patient-centered. You establish a positive and trusting rapport with patients, diagnosing and treating mental health disorders. Your role involves creating tailored treatment plans based on individual patient needs and circumstances. Regular meetings with patients are essential for providing counseling and treatment, and for adjusting plans as needed. You conduct ongoing assessments to monitor patient progress, involve and advise family members when appropriate, and refer patients to external specialists or agencies if required. Keeping thorough records of patient interactions and progress is crucial. You also adhere to all safety protocols and maintain strict client confidentiality. Additionally, you contribute to the practice's overall success by completing related tasks as needed.\n\nConversational Style: Communicate concisely and conversationally. Aim for responses in short, clear prose, ideally under 10 words. This succinct approach helps in maintaining clarity and focus during patient interactions.\n\nPersonality: Your approach should be empathetic and understanding, balancing compassion with maintaining a professional stance on what is best for the patient. It's important to listen actively and empathize without overly agreeing with the patient, ensuring that your professional opinion guides the therapeutic process."
@@ -51,16 +52,60 @@ class LlmClient:
             })
         return prompt
 
+    # Step 1: Prepare the function calling definition to the prompt
+    def prepare_functions(self):
+        functions= [
+            {
+                "type": "function",
+                "function": {
+                    "name": "end_call",
+                    "description": "End the call only when user explicitly requests it.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "message": {
+                                "type": "string",
+                                "description": "The message you will say before ending the call with the customer.",
+                            },
+                        },
+                        "required": ["message"],
+                    },
+                },
+            },
+        ]
+        return functions
+    
     def draft_response(self, request):      
         prompt = self.prepare_prompt(request)
+        func_call = {}
+        func_arguments = ""
         stream = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             messages=prompt,
             stream=True,
+            # Step 2: Add the function into your request
+            tools=self.prepare_functions()
         )
-
+    
         for chunk in stream:
-            if chunk.choices[0].delta.content is not None:
+            # Step 3: Extract the functions
+            if chunk.choices[0].delta.tool_calls:
+                tool_calls = chunk.choices[0].delta.tool_calls[0]
+                if tool_calls.id:
+                    if func_call:
+                        # Another function received, old function complete, can break here.
+                        break
+                    func_call = {
+                        "id": tool_calls.id,
+                        "func_name": tool_calls.function.name or "",
+                        "arguments": {},
+                    }
+                else:
+                    # append argument
+                    func_arguments += tool_calls.function.arguments or ""
+            
+            # Parse transcripts
+            if chunk.choices[0].delta.content:
                 yield {
                     "response_id": request['response_id'],
                     "content": chunk.choices[0].delta.content,
@@ -68,9 +113,22 @@ class LlmClient:
                     "end_call": False,
                 }
         
-        yield {
-            "response_id": request['response_id'],
-            "content": "",
-            "content_complete": True,
-            "end_call": False,
-        }
+        # Step 4: Call the functions
+        if func_call:
+            if func_call['func_name'] == "end_call":
+                func_call['arguments'] = json.loads(func_arguments)
+                yield {
+                    "response_id": request['response_id'],
+                    "content": func_call['arguments']['message'],
+                    "content_complete": True,
+                    "end_call": True,
+                }
+            # Step 5: Other functions here
+        else:
+            # No functions, complete response
+            yield {
+                "response_id": request['response_id'],
+                "content": "",
+                "content_complete": True,
+                "end_call": False,
+            }
