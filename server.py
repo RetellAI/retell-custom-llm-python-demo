@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.websockets import WebSocketState
-# from llm import LlmClient
-from llm_with_func_calling import LlmClient
+from llm import LlmClient
+#from llm_with_func_calling import LlmClient
 from twilio_server import TwilioClient
 from retellclient.models import operations
 from twilio.twiml.voice_response import VoiceResponse
@@ -39,7 +39,7 @@ call_list = {}
 #twilio_client.create_phone_call("+15123801351", "+14159646968", os.environ['RETELL_AGENT_ID'])
 
 async def index(request):
-    return web.Response(text="Welcome home!")
+     return JSONResponse(status_code=200, content={"message": "Hello World"})
 
 async def call_number(request):
     to_number = request.match_info['to_number']
@@ -82,7 +82,8 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
     await websocket.accept()
     logger.debug(f"Handle llm ws for: {call_id}")
     
-    call_id_value = call_id.split('/')[1]
+    #call_id_value = call_id.split('/')[1]
+    call_id_value = 'abc'
     username=call_list.get(call_id_value, 'John')
 
     logger.debug(f"Calling to: {username}")
