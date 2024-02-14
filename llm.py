@@ -1,7 +1,7 @@
 from openai import OpenAI
 import os
 
-beginSentence = "Hi, this is Ryan from Facebook , am I speaking to Craig?"
+beginSentence = "Hi, this is Joe from Balance Staffing , am I speaking to Craig?"
 agentPrompt = """
 You are recruiter for an Account Executive position.
 Objective: Engage in a preliminary conversation with a candidate who applied for the Account Executive role, assess their qualifications and fit for the position, and inform them of the next steps in the hiring process.
@@ -45,7 +45,7 @@ class LlmClient:
             #"content": f"{beginSentence}{user}?",
             "content": f"{beginSentence}",
             "content_complete": True,
-            "end_call": False,
+            "end_call": True,
         }
     
     def convert_transcript_to_openai_messages(self, transcript):
