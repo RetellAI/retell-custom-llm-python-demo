@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.websockets import WebSocketState
-from llm import LlmClient
-#from llm_with_func_calling import LlmClient
+#from llm import LlmClient
+from llm_with_func_calling import LlmClient
 from twilio_server import TwilioClient
 from retellclient.models import operations
 from twilio.twiml.voice_response import VoiceResponse
@@ -90,7 +90,9 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
 
     # send first message to signal ready of server
     response_id = 0
-    first_event = llm_client.draft_begin_messsage(username)
+    #first_event = llm_client.draft_begin_messsage(username)
+    first_event = llm_client.draft_begin_messsage()
+        
     await websocket.send_text(json.dumps(first_event))
 
     try:
