@@ -75,9 +75,10 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
                     continue # new response needed, abondon this one
     except Exception as e:
         print(f'LLM WebSocket error for {call_id}: {e}')
+        await websocket.close(1002, e)
     finally:
         try:
-            await websocket.close()
+            await websocket.close(1000, "Closing as requested.")
         except RuntimeError as e:
             print(f"Websocket already closed for {call_id}")
         print(f"Closing llm ws for: {call_id}")
