@@ -40,7 +40,7 @@ async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
         if call_response.call_detail:
             response = VoiceResponse()
             start = response.connect()
-            start.stream(url=f"wss://api.re-tell.ai/audio-websocket/{call_response.call_detail.call_id}")
+            start.stream(url=f"wss://api.retellai.com/audio-websocket/{call_response.call_detail.call_id}")
             return PlainTextResponse(str(response), media_type='text/xml')
     except Exception as err:
         print(f"Error in twilio voice webhook: {err}")
