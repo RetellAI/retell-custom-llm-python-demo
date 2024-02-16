@@ -67,11 +67,15 @@ async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
         if call_response.call_detail:
             response = VoiceResponse()
             start = response.connect()
-            start.stream(url=f"wss://api.re-tell.ai/audio-websocket/{call_response.call_detail.call_id}")
+
+            start.stream(url=f"wss://api.retellai.com/audio-websocket/{call_response.call_detail.call_id}")
             logger.debug(f"twilio webhook call_id: {call_response.call_detail.call_id}")
             user = db_client.get_username_by_phone_number(post_data['Called'].lstrip('+'))
             call_list[call_response.call_detail.call_id]=user
             
+
+            start.stream(url=f"wss://api.retellai.com/audio-websocket/{call_response.call_detail.call_id}")
+
             return PlainTextResponse(str(response), media_type='text/xml')
     except Exception as err:
         print(f"Error in twilio voice webhook: {err}")
@@ -114,9 +118,10 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
                     continue # new response needed, abondon this one
     except Exception as e:
         print(f'LLM WebSocket error for {call_id}: {e}')
+        await websocket.close(1002, e)
     finally:
         try:
-            await websocket.close()
+            await websocket.close(1000, "Closing as requested.")
         except RuntimeError as e:
             print(f"Websocket already closed for {call_id}")
         print(f"Closing llm ws for: {call_id}")
