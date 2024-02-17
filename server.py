@@ -57,7 +57,7 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
     first_event = llm_client.draft_begin_messsage()
     await websocket.send_text(json.dumps(first_event))
 
-    async def helper(request):
+    async def stream_response(request):
         nonlocal response_id
         for event in llm_client.draft_response(request):
             await websocket.send_text(json.dumps(event))
@@ -73,7 +73,7 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
             if 'response_id' not in request:
                 continue # no response needed, process live transcript update if needed
             response_id = request['response_id']
-            asyncio.create_task(helper(request))
+            asyncio.create_task(stream_response(request))
     except Exception as e:
         print(f'LLM WebSocket error for {call_id}: {e}')
         await websocket.close(1002, e)
