@@ -1,7 +1,7 @@
 import json
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.websockets import WebSocketState
 # from llm import LlmClient
@@ -19,9 +19,9 @@ llm_client = LlmClient()
 twilio_client = TwilioClient()
 
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
-# twilio_client.register_phone_agent("+12133548310", os.environ['RETELL_AGENT_ID'])
 # twilio_client.delete_phone_number("+12133548310")
-# twilio_client.create_phone_call("+12133548310", "+13123156212", os.environ['RETELL_AGENT_ID'])
+twilio_client.register_phone_agent("+14154750418", os.environ['RETELL_AGENT_ID'])
+twilio_client.create_phone_call("+14154750418", "+13123156250", os.environ['RETELL_AGENT_ID'])
 
 @app.post("/twilio-voice-webhook/{agent_id_path}")
 async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
@@ -70,16 +70,14 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
             # print out transcript
             os.system('cls' if os.name == 'nt' else 'clear')
             print(json.dumps(request, indent=4))
+            
             if 'response_id' not in request:
                 continue # no response needed, process live transcript update if needed
             response_id = request['response_id']
             asyncio.create_task(stream_response(request))
+    except WebSocketDisconnect:
+        print(f"LLM WebSocket disconnected for {call_id}")
     except Exception as e:
         print(f'LLM WebSocket error for {call_id}: {e}')
-        await websocket.close(1002, e)
     finally:
-        try:
-            await websocket.close(1000, "Closing as requested.")
-        except RuntimeError as e:
-            print(f"Websocket already closed for {call_id}")
-        print(f"Closing llm ws for: {call_id}")
+        print(f"LLM WebSocket connection closed for {call_id}")
