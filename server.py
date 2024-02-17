@@ -20,8 +20,8 @@ twilio_client = TwilioClient()
 
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
 # twilio_client.delete_phone_number("+12133548310")
-twilio_client.register_phone_agent("+14154750418", os.environ['RETELL_AGENT_ID'])
-twilio_client.create_phone_call("+14154750418", "+13123156250", os.environ['RETELL_AGENT_ID'])
+# twilio_client.register_phone_agent("+14154750418", os.environ['RETELL_AGENT_ID'])
+# twilio_client.create_phone_call("+14154750418", "+13123156212", os.environ['RETELL_AGENT_ID'])
 
 @app.post("/twilio-voice-webhook/{agent_id_path}")
 async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
