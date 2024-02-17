@@ -9,6 +9,7 @@ from llm_with_func_calling import LlmClient
 from twilio_server import TwilioClient
 from retellclient.models import operations
 from twilio.twiml.voice_response import VoiceResponse
+import asyncio
 
 load_dotenv()
 
@@ -56,6 +57,12 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
     first_event = llm_client.draft_begin_messsage()
     await websocket.send_text(json.dumps(first_event))
 
+    async def helper(request):
+        nonlocal response_id
+        for event in llm_client.draft_response(request):
+            await websocket.send_text(json.dumps(event))
+            if request['response_id'] < response_id:
+                return # new response needed, abondon this one
     try:
         while True:
             message = await websocket.receive_text()
@@ -63,16 +70,10 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
             # print out transcript
             os.system('cls' if os.name == 'nt' else 'clear')
             print(json.dumps(request, indent=4))
-
             if 'response_id' not in request:
                 continue # no response needed, process live transcript update if needed
-
-            if request['response_id'] > response_id:
-                response_id = request['response_id']
-            for event in llm_client.draft_response(request):
-                await websocket.send_text(json.dumps(event))
-                if request['response_id'] < response_id:
-                    continue # new response needed, abondon this one
+            response_id = request['response_id']
+            asyncio.create_task(helper(request))
     except Exception as e:
         print(f'LLM WebSocket error for {call_id}: {e}')
         await websocket.close(1002, e)
