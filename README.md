@@ -11,7 +11,7 @@ this demo more realistic.
 1. First install dependencies
 
 ```bash
-pip3 install requirements.txt
+pip3 install -r requirements.txt
 ```
 
 2. Fill out the API keys in `.env`
