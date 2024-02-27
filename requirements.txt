@@ -28,3 +28,4 @@ twilio==8.12.0
 retell-sdk==2.0.1
 fastapi==0.100.1
 uvicorn==0.21.1
+python-multipart==0.0.9
