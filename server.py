@@ -31,6 +31,8 @@ async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
         if 'AnsweredBy' in post_data and post_data['AnsweredBy'] == "machine_start":
             twilio_client.end_call(post_data['CallSid'])
             return PlainTextResponse("")
+        elif 'AnsweredBy' in post_data:
+            return PlainTextResponse("") 
 
         call_response = twilio_client.retell.register_call(operations.RegisterCallRequestBody(
             agent_id=agent_id_path, 
