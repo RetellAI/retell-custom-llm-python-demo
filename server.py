@@ -15,7 +15,6 @@ load_dotenv()
 
 app = FastAPI()
 
-llm_client = LlmClient()
 twilio_client = TwilioClient()
 
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
@@ -53,6 +52,8 @@ async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
 async def websocket_handler(websocket: WebSocket, call_id: str):
     await websocket.accept()
     print(f"Handle llm ws for: {call_id}")
+
+    llm_client = LlmClient()
 
     # send first message to signal ready of server
     response_id = 0
