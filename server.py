@@ -11,7 +11,7 @@ from retellclient.models import operations
 from twilio.twiml.voice_response import VoiceResponse
 import asyncio
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = FastAPI()
 
