@@ -89,6 +89,8 @@ class LlmClient:
     
         for chunk in stream:
             # Step 3: Extract the functions
+            if len(chunk.choices) == 0:
+                continue
             if chunk.choices[0].delta.tool_calls:
                 tool_calls = chunk.choices[0].delta.tool_calls[0]
                 if tool_calls.id:
