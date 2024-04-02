@@ -4,7 +4,7 @@ import os
 
 class TwilioClient:
     def __init__(self):
-        self.client = Client(os.environ['TWILIO_ACCOUNT_SID'], os.environ['TWILIO_AUTH_TOKEN'])
+        self.client = Client(os.environ['TWILIO_ACCOUNT_ID'], os.environ['TWILIO_AUTH_TOKEN'])
         self.retell = Retell(
             api_key=os.environ['RETELL_API_KEY'],
         )

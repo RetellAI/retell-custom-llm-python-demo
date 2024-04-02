@@ -74,11 +74,17 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
             message = await websocket.receive_text()
             request = json.loads(message)
             # print out transcript
-            os.system('cls' if os.name == 'nt' else 'clear')
             print(json.dumps(request, indent=4))
+            
+            # Clear the console
+            # os.system('cls' if os.name == 'nt' else 'clear')
 
-            if 'response_id' not in request:
-                continue # no response needed, process live transcript update if needed
+            # There are 4 types of interaction_type: call_details, update_only, response_required, and reminder_required.
+            # Not all of them need to be handled, only response_required and reminder_required.
+            if request['interaction_type'] == "call_details":
+                continue
+            if request['interaction_type'] == "update_only":
+                continue
             response_id = request['response_id']
             asyncio.create_task(stream_response(request))
     except WebSocketDisconnect:

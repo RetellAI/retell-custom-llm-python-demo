@@ -12,7 +12,7 @@ class LlmClient:
             api_key=os.environ['OPENAI_API_KEY'],
         )
     
-    def draft_begin_messsage(self):
+    def draft_begin_message(self):
         return {
             "response_id": 0,
             "content": beginSentence,
