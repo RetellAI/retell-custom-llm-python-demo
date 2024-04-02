@@ -1,15 +1,14 @@
 import json
 import os
+import asyncio
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.websockets import WebSocketState
-# from llm import LlmClient
 from llm_with_func_calling import LlmClient
 from twilio_server import TwilioClient
-from retellclient.models import operations
+# from retell.models import operations
 from twilio.twiml.voice_response import VoiceResponse
-import asyncio
 
 load_dotenv(override=True)
 
@@ -19,8 +18,8 @@ twilio_client = TwilioClient()
 
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
 # twilio_client.delete_phone_number("+12133548310")
-# twilio_client.register_phone_agent("+14154750418", os.environ['RETELL_AGENT_ID'])
-# twilio_client.create_phone_call("+14154750418", "+13123156212", os.environ['RETELL_AGENT_ID'])
+# twilio_client.register_phone_agent("+13392016322", os.environ['RETELL_AGENT_ID'])
+# twilio_client.create_phone_call("+12133548310", "+14154750418", os.environ['RETELL_AGENT_ID'])
 
 @app.post("/twilio-voice-webhook/{agent_id_path}")
 async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
@@ -31,22 +30,26 @@ async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
             twilio_client.end_call(post_data['CallSid'])
             return PlainTextResponse("")
         elif 'AnsweredBy' in post_data:
-            return PlainTextResponse("") 
+            return PlainTextResponse("")
 
-        call_response = twilio_client.retell.register_call(operations.RegisterCallRequestBody(
-            agent_id=agent_id_path, 
-            audio_websocket_protocol="twilio", 
-            audio_encoding="mulaw", 
-            sample_rate=8000
-        ))
-        if call_response.call_detail:
-            response = VoiceResponse()
-            start = response.connect()
-            start.stream(url=f"wss://api.retellai.com/audio-websocket/{call_response.call_detail.call_id}")
-            return PlainTextResponse(str(response), media_type='text/xml')
+        # call_repsponse = twilio_client.retell.register_call(operations.RegisterCallRequestBody(
+        call_response = twilio_client.retell.call.register(
+            agent_id=agent_id_path,
+            audio_websocket_protocol="twilio",
+            audio_encoding="mulaw",
+            sample_rate=8000, # Sample rate has to be 8000 for Twilio
+        )
+
+        print(f"Call response: {call_response}")
+
+        response = VoiceResponse()
+        start = response.connect()
+        start.stream(url=f"wss://api.retellai.com/audio-websocket/{call_response.call_id}")
+        return PlainTextResponse(str(response), media_type='text/xml')
     except Exception as err:
         print(f"Error in twilio voice webhook: {err}")
         return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
+    
 
 @app.websocket("/llm-websocket/{call_id}")
 async def websocket_handler(websocket: WebSocket, call_id: str):
@@ -55,9 +58,9 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
 
     llm_client = LlmClient()
 
-    # send first message to signal ready of server
+    # Send first message to signal ready of server
     response_id = 0
-    first_event = llm_client.draft_begin_messsage()
+    first_event = llm_client.draft_begin_message()
     await websocket.send_text(json.dumps(first_event))
 
     async def stream_response(request):
@@ -65,7 +68,7 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
         for event in llm_client.draft_response(request):
             await websocket.send_text(json.dumps(event))
             if request['response_id'] < response_id:
-                return # new response needed, abondon this one
+                return # new response needed, abandon this one
     try:
         while True:
             message = await websocket.receive_text()
@@ -73,7 +76,7 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
             # print out transcript
             os.system('cls' if os.name == 'nt' else 'clear')
             print(json.dumps(request, indent=4))
-            
+
             if 'response_id' not in request:
                 continue # no response needed, process live transcript update if needed
             response_id = request['response_id']
@@ -81,6 +84,7 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
     except WebSocketDisconnect:
         print(f"LLM WebSocket disconnected for {call_id}")
     except Exception as e:
-        print(f'LLM WebSocket error for {call_id}: {e}')
+        print(f"Error in LLM WebSocket: {e}")
     finally:
         print(f"LLM WebSocket connection closed for {call_id}")
+
