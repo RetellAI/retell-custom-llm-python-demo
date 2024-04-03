@@ -12,16 +12,17 @@ from retell import Retell
 from retell.resources.call import CallResponse
 
 load_dotenv(override=True)
-
 app = FastAPI()
-
-twilio_client = TwilioClient()
 retell = Retell(api_key=os.environ['RETELL_API_KEY'])
+
+# Twilio functions
+twilio_client = TwilioClient()
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
 # twilio_client.delete_phone_number("+12133548310")
 # twilio_client.register_phone_agent("+13392016322", os.environ['RETELL_AGENT_ID'])
 # twilio_client.create_phone_call("+12133548310", "+14154750418", os.environ['RETELL_AGENT_ID'])
 
+# Only used for twilio phone call situations
 @app.post("/twilio-voice-webhook/{agent_id_path}")
 async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
     try:
@@ -42,7 +43,6 @@ async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
             to_number=post_data['To'],
             metadata={"twilio_call_sid": post_data['CallSid']}
         )
-
         print(f"Call response: {call_response}")
 
         response = VoiceResponse()
@@ -52,8 +52,24 @@ async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
     except Exception as err:
         print(f"Error in twilio voice webhook: {err}")
         return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
-    
 
+# Only used for web frontend to register call so that frontend don't need api key
+@app.post("/register-call-on-your-server")
+async def handle_register_call(request: Request):
+    try:
+        post_data = await request.json()
+        call_response = retell.call.register(
+            agent_id=post_data["agent_id"],
+            audio_websocket_protocol="web",
+            audio_encoding="s16le",
+            sample_rate=post_data["sample_rate"], # Sample rate has to be 8000 for Twilio
+        )
+        print(f"Call response: {call_response}")
+    except Exception as err:
+        print(f"Error in register call: {err}")
+        return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
+
+# Custom LLM Websocket handler, receive audio transcription and send back text response
 @app.websocket("/llm-websocket/{call_id}")
 async def websocket_handler(websocket: WebSocket, call_id: str):
     await websocket.accept()
