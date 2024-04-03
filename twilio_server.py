@@ -1,13 +1,10 @@
 from twilio.rest import Client
-from retell import Retell
+
 import os
 
 class TwilioClient:
     def __init__(self):
         self.client = Client(os.environ['TWILIO_ACCOUNT_ID'], os.environ['TWILIO_AUTH_TOKEN'])
-        self.retell = Retell(
-            api_key=os.environ['RETELL_API_KEY'],
-        )
 
     # Create a new phone number and route it to use this server
     def create_phone_number(self, area_code, agent_id):

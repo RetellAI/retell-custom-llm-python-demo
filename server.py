@@ -7,15 +7,16 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.websockets import WebSocketState
 from llm_with_func_calling import LlmClient
 from twilio_server import TwilioClient
-# from retell.models import operations
 from twilio.twiml.voice_response import VoiceResponse
+from retell import Retell
+from retell.resources.call import CallResponse
 
 load_dotenv(override=True)
 
 app = FastAPI()
 
 twilio_client = TwilioClient()
-
+retell = Retell(api_key=os.environ['RETELL_API_KEY'])
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
 # twilio_client.delete_phone_number("+12133548310")
 # twilio_client.register_phone_agent("+13392016322", os.environ['RETELL_AGENT_ID'])
@@ -32,12 +33,14 @@ async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
         elif 'AnsweredBy' in post_data:
             return PlainTextResponse("")
 
-        # call_repsponse = twilio_client.retell.register_call(operations.RegisterCallRequestBody(
-        call_response = twilio_client.retell.call.register(
+        call_response = retell.call.register(
             agent_id=agent_id_path,
             audio_websocket_protocol="twilio",
             audio_encoding="mulaw",
             sample_rate=8000, # Sample rate has to be 8000 for Twilio
+            from_number=post_data['From'],
+            to_number=post_data['To'],
+            metadata={"twilio_call_sid": post_data['CallSid']}
         )
 
         print(f"Call response: {call_response}")
@@ -54,10 +57,13 @@ async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
 @app.websocket("/llm-websocket/{call_id}")
 async def websocket_handler(websocket: WebSocket, call_id: str):
     await websocket.accept()
+    
     print(f"Handle llm ws for: {call_id}")
-
+    call_details: CallResponse = retell.call.retrieve(call_id)
+    print(call_details)
+    
     llm_client = LlmClient()
-
+    
     # Send first message to signal ready of server
     response_id = 0
     first_event = llm_client.draft_begin_message()
@@ -79,14 +85,13 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
             # Clear the console
             # os.system('cls' if os.name == 'nt' else 'clear')
 
-            # There are 4 types of interaction_type: call_details, update_only, response_required, and reminder_required.
+            # There are 3 types of interaction_type: update_only, response_required, and reminder_required.
             # Not all of them need to be handled, only response_required and reminder_required.
-            if request['interaction_type'] == "call_details":
-                continue
             if request['interaction_type'] == "update_only":
                 continue
-            response_id = request['response_id']
-            asyncio.create_task(stream_response(request))
+            if request['interaction_type'] == "response_required" or request['interaction_type'] == "reminder_required":
+                response_id = request['response_id']
+                asyncio.create_task(stream_response(request))
     except WebSocketDisconnect:
         print(f"LLM WebSocket disconnected for {call_id}")
     except Exception as e:
