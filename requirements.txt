@@ -25,7 +25,7 @@ Werkzeug==3.0.1
 wsproto==1.2.0
 zipp==3.17.0
 twilio==8.12.0
-retell-sdk==2.0.4
+retell-sdk==3.5.0
 fastapi==0.100.1
 uvicorn==0.21.1
 python-multipart==0.0.9
