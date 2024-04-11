@@ -80,7 +80,7 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
     # Send optional config to Retell server
     config = CustomLlmResponse(
         response_type="config",
-        content= {
+        config= {
             "auto_reconnect": True,
             "call_details": True,
         },
@@ -110,8 +110,8 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
             # Not all of them need to be handled, only response_required and reminder_required.
             if request.interaction_type == "call_details":
                 continue
-            if request.interaction_type == "pingpong":
-                await websocket.send_text(json.dumps({"response_type": "pingpong", "content": request.content}))
+            if request.interaction_type == "ping_pong":
+                await websocket.send_text(json.dumps({"response_type": "ping_pong", "timestamp": request.timestamp}))
                 continue
             if request.interaction_type == "update_only":
                 continue
