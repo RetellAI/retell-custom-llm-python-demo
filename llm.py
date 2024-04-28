@@ -1,7 +1,11 @@
-from openai import OpenAI
+from openai import AsyncOpenAI
 import os
-from custom_types import CustomLlmRequest, CustomLlmResponse, Utterance
 from typing import List
+from custom_types import (
+    ResponseRequiredRequest,
+    ResponseResponse,
+    Utterance,
+)
 
 begin_sentence = "Hey there, I'm your personal AI therapist, how can I help you?"
 agent_prompt = "Task: As a professional therapist, your responsibilities are comprehensive and patient-centered. You establish a positive and trusting rapport with patients, diagnosing and treating mental health disorders. Your role involves creating tailored treatment plans based on individual patient needs and circumstances. Regular meetings with patients are essential for providing counseling and treatment, and for adjusting plans as needed. You conduct ongoing assessments to monitor patient progress, involve and advise family members when appropriate, and refer patients to external specialists or agencies if required. Keeping thorough records of patient interactions and progress is crucial. You also adhere to all safety protocols and maintain strict client confidentiality. Additionally, you contribute to the practice's overall success by completing related tasks as needed.\n\nConversational Style: Communicate concisely and conversationally. Aim for responses in short, clear prose, ideally under 10 words. This succinct approach helps in maintaining clarity and focus during patient interactions.\n\nPersonality: Your approach should be empathetic and understanding, balancing compassion with maintaining a professional stance on what is best for the patient. It's important to listen actively and empathize without overly agreeing with the patient, ensuring that your professional opinion guides the therapeutic process."
@@ -9,13 +13,13 @@ agent_prompt = "Task: As a professional therapist, your responsibilities are com
 
 class LlmClient:
     def __init__(self):
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             organization=os.environ["OPENAI_ORGANIZATION_ID"],
             api_key=os.environ["OPENAI_API_KEY"],
         )
 
     def draft_begin_message(self):
-        response = CustomLlmResponse(
+        response = ResponseResponse(
             response_id=0,
             content=begin_sentence,
             content_complete=True,
@@ -26,13 +30,13 @@ class LlmClient:
     def convert_transcript_to_openai_messages(self, transcript: List[Utterance]):
         messages = []
         for utterance in transcript:
-            if utterance["role"] == "agent":
-                messages.append({"role": "assistant", "content": utterance["content"]})
+            if utterance.role == "agent":
+                messages.append({"role": "assistant", "content": utterance.content})
             else:
-                messages.append({"role": "user", "content": utterance["content"]})
+                messages.append({"role": "user", "content": utterance.content})
         return messages
 
-    def prepare_prompt(self, request: CustomLlmRequest):
+    def prepare_prompt(self, request: ResponseRequiredRequest):
         prompt = [
             {
                 "role": "system",
@@ -55,17 +59,16 @@ class LlmClient:
             )
         return prompt
 
-    def draft_response(self, request: CustomLlmRequest):
+    async def draft_response(self, request: ResponseRequiredRequest):
         prompt = self.prepare_prompt(request)
-        stream = self.client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+        stream = await self.client.chat.completions.create(
+            model="gpt-4-turbo-preview",  # Or use a 3.5 model for speed
             messages=prompt,
             stream=True,
         )
-
-        for chunk in stream:
+        async for chunk in stream:
             if chunk.choices[0].delta.content is not None:
-                response = CustomLlmResponse(
+                response = ResponseResponse(
                     response_id=request.response_id,
                     content=chunk.choices[0].delta.content,
                     content_complete=False,
@@ -73,7 +76,8 @@ class LlmClient:
                 )
                 yield response
 
-        response = CustomLlmResponse(
+        # Send final response with "content_complete" set to True to signal completion
+        response = ResponseResponse(
             response_id=request.response_id,
             content="",
             content_complete=True,

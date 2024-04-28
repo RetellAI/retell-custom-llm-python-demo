@@ -1,7 +1,11 @@
-from openai import OpenAI
+from openai import AsyncOpenAI
 import os
 import json
-from custom_types import CustomLlmRequest, CustomLlmResponse, Utterance
+from custom_types import (
+    ResponseRequiredRequest,
+    ResponseResponse,
+    Utterance,
+)
 from typing import List
 
 begin_sentence = "Hey there, I'm your personal AI therapist, how can I help you?"
@@ -10,13 +14,13 @@ agent_prompt = "Task: As a professional therapist, your responsibilities are com
 
 class LlmClient:
     def __init__(self):
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             organization=os.environ["OPENAI_ORGANIZATION_ID"],
             api_key=os.environ["OPENAI_API_KEY"],
         )
 
     def draft_begin_message(self):
-        response = CustomLlmResponse(
+        response = ResponseResponse(
             response_id=0,
             content=begin_sentence,
             content_complete=True,
@@ -27,13 +31,13 @@ class LlmClient:
     def convert_transcript_to_openai_messages(self, transcript: List[Utterance]):
         messages = []
         for utterance in transcript:
-            if utterance["role"] == "agent":
-                messages.append({"role": "assistant", "content": utterance["content"]})
+            if utterance.role == "agent":
+                messages.append({"role": "assistant", "content": utterance.content})
             else:
-                messages.append({"role": "user", "content": utterance["content"]})
+                messages.append({"role": "user", "content": utterance.content})
         return messages
 
-    def prepare_prompt(self, request: CustomLlmRequest):
+    def prepare_prompt(self, request: ResponseRequiredRequest):
         prompt = [
             {
                 "role": "system",
@@ -79,19 +83,19 @@ class LlmClient:
         ]
         return functions
 
-    def draft_response(self, request):
+    async def draft_response(self, request: ResponseRequiredRequest):
         prompt = self.prepare_prompt(request)
         func_call = {}
         func_arguments = ""
-        stream = self.client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+        stream = await self.client.chat.completions.create(
+            model="gpt-4-turbo-preview",  # Or use a 3.5 model for speed
             messages=prompt,
             stream=True,
             # Step 2: Add the function into your request
             tools=self.prepare_functions(),
         )
 
-        for chunk in stream:
+        async for chunk in stream:
             # Step 3: Extract the functions
             if len(chunk.choices) == 0:
                 continue
@@ -112,7 +116,7 @@ class LlmClient:
 
             # Parse transcripts
             if chunk.choices[0].delta.content:
-                response = CustomLlmResponse(
+                response = ResponseResponse(
                     response_id=request.response_id,
                     content=chunk.choices[0].delta.content,
                     content_complete=False,
@@ -124,7 +128,7 @@ class LlmClient:
         if func_call:
             if func_call["func_name"] == "end_call":
                 func_call["arguments"] = json.loads(func_arguments)
-                response = CustomLlmResponse(
+                response = ResponseResponse(
                     response_id=request.response_id,
                     content=func_call["arguments"]["message"],
                     content_complete=True,
@@ -134,7 +138,7 @@ class LlmClient:
             # Step 5: Other functions here
         else:
             # No functions, complete response
-            response = CustomLlmResponse(
+            response = ResponseResponse(
                 response_id=request.response_id,
                 content="",
                 content_complete=True,
