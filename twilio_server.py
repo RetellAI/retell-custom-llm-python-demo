@@ -26,8 +26,8 @@ class TwilioClient:
         except Exception as err:
             print(err)
 
-    # Update this phone number to use provided agent id. Also updates voice URL address.
-    def register_phone_agent(self, phone_number, agent_id):
+    # Update this phone number to use provided agent id for inbound calls. Also updates voice URL address.
+    def register_inbound_agent(self, phone_number, agent_id):
         try:
             phone_number_objects = self.client.incoming_phone_numbers.list(limit=200)
             numbers_sid = ""
