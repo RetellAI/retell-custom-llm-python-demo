@@ -1,7 +1,7 @@
 from openai import AsyncOpenAI
 import os
 import json
-from custom_types import (
+from .custom_types import (
     ResponseRequiredRequest,
     ResponseResponse,
     Utterance,

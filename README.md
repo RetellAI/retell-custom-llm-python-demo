@@ -25,7 +25,7 @@ ngrok http 8080
 4. Start the websocket server
 
 ```bash
-uvicorn server:app --reload --port=8080
+uvicorn app.server:app --reload --port=8080
 ```
 
 You should see a fowarding address like
@@ -50,7 +50,7 @@ To ues these features, follow these steps:
 
 3. (optional) Call `create_phone_number` to get a new number and associate with an agent id. This phone number now can handle inbound calls as long as this server is running.
 
-4. (optional) Call `register_phone_agent` to register your Twilio number and associate with an agent id. This phone number now can handle inbound calls as long as this server is running.
+4. (optional) Call `register_inbound_agent` to register your Twilio number and associate with an agent id. This phone number now can handle inbound calls as long as this server is running.
 
 5. (optional) Call `delete_phone_number` to release a number from your Twilio pool.
 
