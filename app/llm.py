@@ -58,7 +58,7 @@ class LlmClient:
     async def draft_response(self, request: ResponseRequiredRequest):
         prompt = self.prepare_prompt(request)
         stream = await acompletion(
-                    model="claude-3-haiku-20240307",  # Or use a 3.5 model for speed
+                    model="claude-3-haiku-20240307",  # Or use a Open AI/ any other model
                     messages=prompt,
                     stream=True,
                     )
