@@ -2,8 +2,7 @@
 
 This is a sample demo repo to show how to have your own LLM plugged into Retell.
 
-This repo currently uses `OpenAI` endpoint, and is not as stable and fast as `Azure
-OpenAI` endpoint. So expect a more varying delay. Feel free to contribute to make
+This repo currently uses `OpenAI` endpoint. Feel free to contribute to make
 this demo more realistic.
 
 ## Steps to run in localhost
