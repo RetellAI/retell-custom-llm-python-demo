@@ -98,12 +98,8 @@ system_prompt = """
 {}
 </scenarios_handling>
 
-<patient_information>
-{}
-</patient_information>
-k
 </system_prompt>
-""".format(style_guardrails, response_guideline, agent_prompt, additional_scenarios, patient_prompt)
+""".format(style_guardrails, response_guideline, agent_prompt, additional_scenarios)
 
 
 ########################################################################
