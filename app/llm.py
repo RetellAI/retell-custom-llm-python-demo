@@ -1,5 +1,4 @@
-from openai import AsyncOpenAI
-import os
+from litellm import acompletion, litellm
 from typing import List
 from .custom_types import (
     ResponseRequiredRequest,
@@ -13,10 +12,7 @@ agent_prompt = "Task: As a professional therapist, your responsibilities are com
 
 class LlmClient:
     def __init__(self):
-        self.client = AsyncOpenAI(
-            organization=os.environ["OPENAI_ORGANIZATION_ID"],
-            api_key=os.environ["OPENAI_API_KEY"],
-        )
+        litellm.modify_params = True
 
     def draft_begin_message(self):
         response = ResponseResponse(
@@ -61,11 +57,11 @@ class LlmClient:
 
     async def draft_response(self, request: ResponseRequiredRequest):
         prompt = self.prepare_prompt(request)
-        stream = await self.client.chat.completions.create(
-            model="gpt-4-turbo-preview",  # Or use a 3.5 model for speed
-            messages=prompt,
-            stream=True,
-        )
+        stream = await acompletion(
+                    model="claude-3-haiku-20240307",  # Or use a Open AI/ any other model
+                    messages=prompt,
+                    stream=True,
+                    )
         async for chunk in stream:
             if chunk.choices[0].delta.content is not None:
                 response = ResponseResponse(
