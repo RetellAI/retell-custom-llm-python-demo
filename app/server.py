@@ -104,9 +104,32 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
                     response_id=response_id,
                     transcript=request_json["transcript"],
                 )
-                print(
-                    f"""Received interaction_type={request_json['interaction_type']}, response_id={response_id}, last_transcript={request_json['transcript'][-1]['content']}"""
-                )
+                
+                transcript = request_json['transcript']
+                if len(transcript) >= 2:
+                    # Clear the screen
+                    os.system('cls' if os.name == 'nt' else 'clear')
+                    
+                    # Print the entire conversation history live
+                    sorted_transcript = sorted(transcript, key=lambda x: x['words'][0]['start'] if x['words'] else 0)
+
+                    print("Conversation History:")
+                    for utterance in sorted_transcript:
+                        role = utterance['role']
+                        content = utterance['content']
+
+                        # Get start and end times
+                        start_time = utterance['words'][0]['start'] if utterance['words'] else 0
+                        end_time = utterance['words'][-1]['end'] if utterance['words'] else 0
+
+                        # Format times as MM:SS.mmm
+                        start_formatted = f"{int(start_time // 60):02d}:{start_time % 60:06.3f}"
+                        end_formatted = f"{int(end_time // 60):02d}:{end_time % 60:06.3f}"
+
+                        color = "\033[93m" if role == 'agent' else "\033[96m"
+                        print(f"{color}[{start_formatted} - {end_formatted}] {role.capitalize()}: {content}\033[0m")
+                        print("-" * 50)  # Separator between messages
+                    
 
                 async for event in llm_client.draft_response(request):
                     await websocket.send_json(event.__dict__)
