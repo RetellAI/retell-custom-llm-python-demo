@@ -1,5 +1,4 @@
-from openai import AsyncOpenAI
-import os
+from litellm import acompletion, litellm
 import json
 from .custom_types import (
     ResponseRequiredRequest,
@@ -14,10 +13,7 @@ agent_prompt = "Task: As a professional therapist, your responsibilities are com
 
 class LlmClient:
     def __init__(self):
-        self.client = AsyncOpenAI(
-            organization=os.environ["OPENAI_ORGANIZATION_ID"],
-            api_key=os.environ["OPENAI_API_KEY"],
-        )
+        litellm.modify_params = True
 
     def draft_begin_message(self):
         response = ResponseResponse(
@@ -87,8 +83,8 @@ class LlmClient:
         prompt = self.prepare_prompt(request)
         func_call = {}
         func_arguments = ""
-        stream = await self.client.chat.completions.create(
-            model="gpt-4-turbo-preview",  # Or use a 3.5 model for speed
+        stream = await acompletion(
+            model="gpt-4-turbo-preview",  # Or use a 3.5 / claude haiku/ any other model for speed
             messages=prompt,
             stream=True,
             # Step 2: Add the function into your request
