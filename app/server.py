@@ -24,7 +24,7 @@ async def handle_webhook(request: Request):
     try:
         post_data = await request.json()
         valid_signature = retell.verify(
-            json.dumps(post_data, separators=(",", ":")),
+            json.dumps(post_data, separators=(",", ":"), ensure_ascii=False),
             api_key=str(os.environ["RETELL_API_KEY"]),
             signature=str(request.headers.get("X-Retell-Signature")),
         )
