@@ -36,6 +36,18 @@ the agent you created should connect with your localhost.
 The custom LLM URL would look like
 `wss://dc14-2601-645-c57f-8670-9986-5662-2c9a-adbd.ngrok-free.app/llm-websocket`
 
+## Start a call
+
+Retell connects to this WebSocket when a call starts; this server does not
+initiate calls itself.
+
+To test the agent in your browser, open the agent in the dashboard and start a
+web call from the **Test Audio** tab. To place an outbound phone call, connect a
+phone number to the agent and follow the
+[outbound call guide](https://docs.retellai.com/deploy/outbound-call). You can
+also start the call with the
+[Create Phone Call API](https://docs.retellai.com/api-references/create-phone-call).
+
 ## Run in prod
 
 To run in prod, you probably want to customize your LLM solution, host the code

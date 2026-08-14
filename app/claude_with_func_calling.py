@@ -130,7 +130,9 @@ class LlmClient:
         ]
         for utterance in transcript:
             if utterance.role == "agent":
-                messages.append({"role": "assistant", "content": utterance.content})
+                content = utterance.content.rstrip()
+                if content:
+                    messages.append({"role": "assistant", "content": content})
             else:
                 if utterance.content.strip():
                     if messages and messages[-1]["role"] == "user":
